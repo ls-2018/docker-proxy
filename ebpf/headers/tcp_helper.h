@@ -37,7 +37,7 @@ static inline void set_ip_tos(struct __sk_buff* skb, __u8 new_tos) {
 static inline void set_tcp_ip_src(struct __sk_buff* skb, __u32 new_ip) {
     __u32 old_ip = load_word(skb, IP_SRC_OFF);
 
-    bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
+    //    bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
     bpf_l3_csum_replace(skb, IP_CSUM_OFF, old_ip, new_ip, sizeof(new_ip));
     bpf_skb_store_bytes(skb, IP_SRC_OFF, &new_ip, sizeof(new_ip), 0);
 }
@@ -45,20 +45,22 @@ static inline void set_tcp_ip_src(struct __sk_buff* skb, __u32 new_ip) {
 static inline void set_tcp_ip_dest(struct __sk_buff* skb, __u32 new_ip) {
     __u32 old_ip = load_word(skb, IP_DST_OFF);
 
-    bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
+    //    bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
     bpf_l3_csum_replace(skb, IP_CSUM_OFF, old_ip, new_ip, sizeof(new_ip));
     bpf_skb_store_bytes(skb, IP_DST_OFF, &new_ip, sizeof(new_ip), 0);
 }
 
-static inline void set_tcp_dest_port(struct __sk_buff* skb, __u16 new_port) {
+static inline void set_tcp_dest_port(struct __sk_buff* skb, __u16 new_port_dest) {
     __u16 old_port = bpf_htons(load_half(skb, TCP_DPORT_OFF));
+    __u16 new_port = bpf_htons(new_port_dest);
 
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_port, new_port, sizeof(new_port));
     bpf_skb_store_bytes(skb, TCP_DPORT_OFF, &new_port, sizeof(new_port), 0);
 }
 
-static inline void set_tcp_src_port(struct __sk_buff* skb, __u16 new_port) {
+static inline void set_tcp_src_port(struct __sk_buff* skb, __u16 new_port_host) {
     __u16 old_port = bpf_htons(load_half(skb, TCP_PORT_OFF));
+    __u16 new_port = bpf_htons(new_port_host);
 
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_port, new_port, sizeof(new_port));
     bpf_skb_store_bytes(skb, TCP_PORT_OFF, &new_port, sizeof(new_port), 0);

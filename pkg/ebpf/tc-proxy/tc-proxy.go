@@ -79,6 +79,13 @@ func Load(ctx context.Context, opt cfg.Options) {
 		Ifindex: uint16(eth.ProxyIf),
 		Mac:     HandleNullMac(eth.ProxyMac),
 	}
+
+	prd = tc_proxyProxyRedirectConfig{
+		Addr:    utils.Ip2Uint32(eth.InnerGateWay),
+		Port:    uint32(opt.Port),
+		Ifindex: uint16(eth.ProxyIf),
+		Mac:     HandleNullMac("08:00:27:89:27:a4"),
+	}
 	err = obj.tc_proxyMaps.RedirectMap.Update(unsafe.Pointer(&key1), unsafe.Pointer(&prd), ebpf.UpdateAny)
 	if err != nil {
 		panic(err)
@@ -93,9 +100,19 @@ func Load(ctx context.Context, opt cfg.Options) {
 		panic(err)
 	}
 
+	proxyIngress, err := link.AttachTCX(link.TCXOptions{
+		Interface: int(prd.Ifindex),
+		Program:   obj.tc_proxyPrograms.ProxyIngress,
+		Attach:    ebpf.AttachTCXIngress,
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	<-ctx.Done()
 	tcxEgress.Close()
 	proxyEgress.Close()
+	proxyIngress.Close()
 }
 
 func HandleNullMac(mac string) [6]uint8 {

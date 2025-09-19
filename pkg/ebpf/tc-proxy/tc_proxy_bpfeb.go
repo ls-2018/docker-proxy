@@ -71,8 +71,9 @@ type tc_proxySpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type tc_proxyProgramSpecs struct {
-	ProxyEgress *ebpf.ProgramSpec `ebpf:"proxy_egress"`
-	RawEgress   *ebpf.ProgramSpec `ebpf:"raw_egress"`
+	ProxyEgress  *ebpf.ProgramSpec `ebpf:"proxy_egress"`
+	ProxyIngress *ebpf.ProgramSpec `ebpf:"proxy_ingress"`
+	RawEgress    *ebpf.ProgramSpec `ebpf:"raw_egress"`
 }
 
 // tc_proxyMapSpecs contains maps before they are loaded into the kernel.
@@ -135,13 +136,15 @@ type tc_proxyVariables struct {
 //
 // It can be passed to loadTc_proxyObjects or ebpf.CollectionSpec.LoadAndAssign.
 type tc_proxyPrograms struct {
-	ProxyEgress *ebpf.Program `ebpf:"proxy_egress"`
-	RawEgress   *ebpf.Program `ebpf:"raw_egress"`
+	ProxyEgress  *ebpf.Program `ebpf:"proxy_egress"`
+	ProxyIngress *ebpf.Program `ebpf:"proxy_ingress"`
+	RawEgress    *ebpf.Program `ebpf:"raw_egress"`
 }
 
 func (p *tc_proxyPrograms) Close() error {
 	return _Tc_proxyClose(
 		p.ProxyEgress,
+		p.ProxyIngress,
 		p.RawEgress,
 	)
 }
