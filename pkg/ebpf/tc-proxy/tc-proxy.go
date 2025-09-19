@@ -14,7 +14,7 @@ import (
 	"github.com/cilium/ebpf/link"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  tc_proxy ../../../ebpf/tc-proxy.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
+//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  tc_proxy ../../../ebpf/tc-proxy.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
 
 func Load(ctx context.Context, opt cfg.Options) {
 	ipTtlMap, err := ebpf.LoadPinnedMap("/sys/fs/bpf/docker-proxy/ip_ttl",

@@ -13,7 +13,7 @@ import (
 	"github.com/cilium/ebpf/link"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type dns_question -type a_record tc_dns_replace ../../../ebpf/tc-dns-replace.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
+//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type dns_question -type a_record tc_dns_replace ../../../ebpf/tc-dns-replace.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
 
 func Load(ctx context.Context) {
 	log.L.Println("✈️ cat /sys/kernel/debug/tracing/trace_pipe")

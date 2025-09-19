@@ -14,9 +14,10 @@ import (
 	"github.com/cilium/ebpf/link"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  xdp_proxy ../../../ebpf/xdp-proxy.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
+//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  xdp_proxy ../../../ebpf/xdp-proxy.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
 
 func Load(ctx context.Context, opt cfg.Options) {
+	eth.ProxyIp = ""
 	ipTtlMap, err := ebpf.LoadPinnedMap("/sys/fs/bpf/docker-proxy/ip_ttl",
 		&ebpf.LoadPinOptions{
 			ReadOnly: true,
@@ -62,10 +63,10 @@ func Load(ctx context.Context, opt cfg.Options) {
 
 	var key1 int32 = 1 // proxy eth
 	var prd = xdp_proxyProxyRedirectConfig{
-		Addr:    utils.Ip2Uint32(eth.ProxyIp),
+		Addr:    utils.Ip2Uint32(outerIp),
 		Port:    uint32(opt.Port),
-		Ifindex: uint16(eth.ProxyIf),
-		Mac:     HandleNullMac(eth.ProxyMac),
+		Ifindex: uint16(outIfindex),
+		Mac:     HandleNullMac(outerMac),
 	}
 	err = obj.xdp_proxyMaps.RedirectMap.Update(unsafe.Pointer(&key1), unsafe.Pointer(&prd), ebpf.UpdateAny)
 	if err != nil {
@@ -77,6 +78,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 		Interface: outIfindex,
 		Flags:     link.XDPGenericMode,
 	})
+
 	if err != nil {
 		panic(err)
 	}

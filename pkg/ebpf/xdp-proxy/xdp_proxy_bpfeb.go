@@ -13,11 +13,12 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type xdp_proxyConnectionInfo struct {
+type xdp_proxyConntrackEntry struct {
 	_    structs.HostLayout
-	Addr uint32
+	Ip   uint32
 	Port uint16
 	Mac  [6]uint8
+	Ttl  uint32
 }
 
 type xdp_proxyProxyRedirectConfig struct {
@@ -77,16 +78,15 @@ type xdp_proxyProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type xdp_proxyMapSpecs struct {
-	ConnectionMap *ebpf.MapSpec `ebpf:"connection_map"`
-	IpTtl         *ebpf.MapSpec `ebpf:"ip_ttl"`
-	RedirectMap   *ebpf.MapSpec `ebpf:"redirect_map"`
+	ConnMap     *ebpf.MapSpec `ebpf:"conn_map"`
+	IpTtl       *ebpf.MapSpec `ebpf:"ip_ttl"`
+	RedirectMap *ebpf.MapSpec `ebpf:"redirect_map"`
 }
 
 // xdp_proxyVariableSpecs contains global variables before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type xdp_proxyVariableSpecs struct {
-	Unused3 *ebpf.VariableSpec `ebpf:"unused3"`
 }
 
 // xdp_proxyObjects contains all objects after they have been loaded into the kernel.
@@ -109,14 +109,14 @@ func (o *xdp_proxyObjects) Close() error {
 //
 // It can be passed to loadXdp_proxyObjects or ebpf.CollectionSpec.LoadAndAssign.
 type xdp_proxyMaps struct {
-	ConnectionMap *ebpf.Map `ebpf:"connection_map"`
-	IpTtl         *ebpf.Map `ebpf:"ip_ttl"`
-	RedirectMap   *ebpf.Map `ebpf:"redirect_map"`
+	ConnMap     *ebpf.Map `ebpf:"conn_map"`
+	IpTtl       *ebpf.Map `ebpf:"ip_ttl"`
+	RedirectMap *ebpf.Map `ebpf:"redirect_map"`
 }
 
 func (m *xdp_proxyMaps) Close() error {
 	return _Xdp_proxyClose(
-		m.ConnectionMap,
+		m.ConnMap,
 		m.IpTtl,
 		m.RedirectMap,
 	)
@@ -126,7 +126,6 @@ func (m *xdp_proxyMaps) Close() error {
 //
 // It can be passed to loadXdp_proxyObjects or ebpf.CollectionSpec.LoadAndAssign.
 type xdp_proxyVariables struct {
-	Unused3 *ebpf.Variable `ebpf:"unused3"`
 }
 
 // xdp_proxyPrograms contains all programs after they have been loaded into the kernel.

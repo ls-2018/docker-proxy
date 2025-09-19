@@ -20,7 +20,7 @@ import (
 	"github.com/cilium/ebpf/ringbuf"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -type dns_question -type cache_record -type dns_peer tc_dns_parse ../../../ebpf/tc-dns-parse.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
+//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type dns_question -type cache_record -type dns_peer tc_dns_parse ../../../ebpf/tc-dns-parse.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
 
 func Load(ctx context.Context, opt cfg.Options, successCallBack func()) {
 	log.L.Println("✈️ cat /sys/kernel/debug/tracing/trace_pipe")

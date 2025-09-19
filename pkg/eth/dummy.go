@@ -9,7 +9,7 @@ import (
 const ProxyName = "docker-proxy"
 
 // ProxyIp 与 eBPF 重定向一致，确保发往该 IP:port 的包被内核认为是本机
-const ProxyIp = "10.5.1.10"
+var ProxyIp = "10.5.1.10"
 
 // ProxyMac 由系统分配后回读，避免与实际不一致
 var ProxyMac = ""

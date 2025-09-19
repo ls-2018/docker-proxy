@@ -59,13 +59,13 @@ func DecodeDNSName(data []uint8) string {
 }
 func U32ToIP(ip uint32) string {
 	b := make([]byte, 4)
-	binary.LittleEndian.PutUint32(b, ip)
+	binary.BigEndian.PutUint32(b, ip)
 	return net.IP(b).String()
 }
 
 func Ip2Uint32(ip string) uint32 {
 	ip = strings.TrimSpace(ip)
-	return binary.LittleEndian.Uint32(net.ParseIP(ip).To4())
+	return binary.BigEndian.Uint32(net.ParseIP(ip).To4())
 }
 
 func HumanIps(data []uint32) string {

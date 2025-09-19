@@ -8,7 +8,6 @@
 #include "bpf/bpf_tc.h"
 #include "bpf/bpf_tracing.h"
 #include "bpf/bpf_tracing_net.h"
-#include "bpf/bpf_csum.h"
 #include "bpf/map_helpers.h"
 #include "bpf/bpf_kprobe_args.h"
 #include "bpf/bpf_cleanup.h"

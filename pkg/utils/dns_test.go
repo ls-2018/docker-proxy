@@ -19,7 +19,7 @@ func TestIP(t *testing.T) {
 	log.L.Println(binary.BigEndian.Uint32(ip))
 	log.L.Println(binary.LittleEndian.Uint32(ip))
 	b := make([]byte, 4)
-	binary.LittleEndian.PutUint32(b, 350040645)
+	binary.LittleEndian.PutUint32(b, 33559468)
 	log.L.Println(net.IP(b).String())
 
 }

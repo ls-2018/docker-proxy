@@ -43,48 +43,6 @@ struct {
     __uint(max_entries, 65535);
 } connection_map SEC(".maps");
 
-static inline int do_dnat(struct __sk_buff *skb, struct proxy_redirect_config *proxy_eth, bool is_tcp) {
-    // --- 修改目标 IP ---
-    __u32 old_ip = load_word(skb, IP_DST_OFF); // 网络字节序
-    __u32 new_ip = proxy_eth->addr;            // 假设 proxy_eth->addr 已经是网络字节序
-
-    if (is_tcp) {
-        // TCP 校验和替换
-        bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
-    }
-    else {
-        // UDP 校验和替换（UDP 可选）
-        bpf_l4_csum_replace(skb, UDP_CSUM_OFF, old_ip, new_ip, IS_PSEUDO | sizeof(new_ip));
-    }
-
-    // IP 校验和替换
-    bpf_l3_csum_replace(skb, IP_CSUM_OFF, old_ip, new_ip, sizeof(new_ip));
-
-    // 存储新目标 IP
-    bpf_skb_store_bytes(skb, IP_DST_OFF, &new_ip, sizeof(new_ip), 0);
-
-    // --- 修改目标端口 ---
-    __u16 old_port;
-    __u16 new_port = bpf_htons(proxy_eth->port);
-
-    if (is_tcp) {
-        old_port = load_half(skb, TCP_DPORT_OFF);
-        bpf_l4_csum_replace(skb, TCP_CSUM_OFF, old_port, new_port, sizeof(new_port));
-        bpf_skb_store_bytes(skb, TCP_DPORT_OFF, &new_port, sizeof(new_port), 0);
-    }
-    else {
-        old_port = load_half(skb, UDP_DPT_OFF);
-        bpf_l4_csum_replace(skb, UDP_CSUM_OFF, old_port, new_port, sizeof(new_port));
-        bpf_skb_store_bytes(skb, UDP_DPT_OFF, &new_port, sizeof(new_port), 0);
-    }
-
-    // --- 修改目标 MAC ---
-    set_dst_mac(skb, (char *)&proxy_eth->mac);
-
-    // --- 最后重定向到目标接口（ingress） ---
-    return bpf_redirect((__u32)proxy_eth->ifindex, 1);
-}
-
 long redirect_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp) {
     // verifier asks for it
     if (tcp == NULL || ip == NULL) {
@@ -117,11 +75,10 @@ long redirect_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp)
     bpf_printk("query   from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &ip->saddr, bpf_ntohs(tcp->source), &ip->daddr, bpf_ntohs(tcp->dest), &ip->saddr, bpf_ntohs(tcp->source), &proxy_eth->addr, proxy_eth->port);
 
     /* DNAT */
-    //    set_dst_mac(skb, (char *)&proxy_eth->mac);
-    //    set_tcp_ip_dest(skb, proxy_eth->addr);
-    //    set_tcp_dest_port(skb, proxy_eth->port);
-    //    return bpf_redirect((__u32)proxy_eth->ifindex, BPF_F_INGRESS);
-    return do_dnat(skb, proxy_eth, 1);
+    set_dst_mac(skb, (char *)&proxy_eth->mac);
+    set_tcp_ip_dest(skb, proxy_eth->addr);
+    set_tcp_dest_port(skb, proxy_eth->port);
+    return bpf_redirect((__u32)proxy_eth->ifindex, BPF_F_INGRESS);
 }
 
 SEC("classifier/egress")
