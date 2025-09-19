@@ -11,6 +11,7 @@ ifeq ($(ARCH), arm64)
 endif
 
 generate:
+	apt-get install net-tools docker.io tcpdump clang-format -y
 	ip link set docker-proxy down || true
 	ip link delete docker-proxy || true
 #	ip link add name docker-proxy type dummy

@@ -73546,7 +73546,7 @@ struct filter_pred {
     u64 val2;
     enum filter_pred_fn fn_num;
     int offset;
-    int not;
+    int not ;
     int op;
 };
 

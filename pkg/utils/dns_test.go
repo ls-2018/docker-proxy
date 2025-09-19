@@ -14,11 +14,10 @@ func TestDecode(t *testing.T) {
 }
 
 func TestIP(t *testing.T) {
-	ip := net.ParseIP("104.244.46.63")
-	ip = ip.To4()                         // 只取 IPv4
-	u32 := binary.LittleEndian.Uint32(ip) // 网络字节序 -> uint32
-	log.L.Println(u32)
-
+	ip := net.ParseIP("172.19.0.2")
+	ip = ip.To4() // 只取 IPv4
+	log.L.Println(binary.BigEndian.Uint32(ip))
+	log.L.Println(binary.LittleEndian.Uint32(ip))
 	b := make([]byte, 4)
 	binary.LittleEndian.PutUint32(b, 350040645)
 	log.L.Println(net.IP(b).String())
