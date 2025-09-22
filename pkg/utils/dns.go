@@ -59,13 +59,14 @@ func DecodeDNSName(data []uint8) string {
 }
 func U32ToIP(ip uint32) string {
 	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, ip)
+	binary.LittleEndian.PutUint32(b, ip)
 	return net.IP(b).String()
 }
 
 func Ip2Uint32(ip string) uint32 {
 	ip = strings.TrimSpace(ip)
-	return binary.BigEndian.Uint32(net.ParseIP(ip).To4())
+	return binary.LittleEndian.Uint32(net.ParseIP(ip).To4())
+
 }
 
 func HumanIps(data []uint32) string {
@@ -76,4 +77,32 @@ func HumanIps(data []uint32) string {
 		}
 	}
 	return strings.Join(res, ",")
+}
+
+// NetToHostShort converts a 16-bit integer from network to host byte order, aka "ntohs"
+func NetToHostShort(i uint16) uint16 {
+	data := make([]byte, 2)
+	binary.BigEndian.PutUint16(data, i)
+	return binary.LittleEndian.Uint16(data)
+}
+
+// NetToHostLong converts a 32-bit integer from network to host byte order, aka "ntohl"
+func NetToHostLong(i uint32) uint32 {
+	data := make([]byte, 4)
+	binary.BigEndian.PutUint32(data, i)
+	return binary.LittleEndian.Uint32(data)
+}
+
+// HostToNetShort converts a 16-bit integer from host to network byte order, aka "htons"
+func HostToNetShort(i uint16) uint16 {
+	b := make([]byte, 2)
+	binary.LittleEndian.PutUint16(b, i)
+	return binary.BigEndian.Uint16(b)
+}
+
+// HostToNetLong converts a 32-bit integer from host to network byte order, aka "htonl"
+func HostToNetLong(i uint32) uint32 {
+	b := make([]byte, 4)
+	binary.LittleEndian.PutUint32(b, i)
+	return binary.BigEndian.Uint32(b)
 }

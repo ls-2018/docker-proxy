@@ -1,13 +1,12 @@
-#include "dns_helper.h"
+#include "tcp_helper.h"
 
+#define ETH_P_IP 0x0800 /* Internet Protocol packet        */
 struct proxy_redirect_config {
     __u32 addr;
-    __u32 port;
+    __u16 port;
     __u16 ifindex;
     __u8 mac[6];
-} __attribute__((packed));
-
-const struct proxy_redirect_config *unused3 __attribute__((unused));
+};
 
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -32,8 +31,8 @@ struct connection_info {
     __u16 original_src_port;
 } __attribute__((packed));
 
-// 10.0.2.15:32185 -> 104.244.43.167:443   [10.0.2.15:32185 -> 127.0.0.1:8888]
-// 127.0.0.1:8888 -> 10.0.2.15:32185       [104.244.43.167:443 -> 10.0.2.15:32185]
+// 10.0.2.15:32185 -> 104.244.43.167:443   [10.0.2.15:32185 -> 127.0.0.1:12345]
+// 127.0.0.1:12345 -> 10.0.2.15:32185       [104.244.43.167:443 -> 10.0.2.15:32185]
 
 // 连接映射，key是代理服务器的IP+端口，value是原始连接信息
 struct {
@@ -195,9 +194,9 @@ int proxy_egress(struct __sk_buff *skb) {
 }
 
 // a:30000 -> b:443 (a egress hook)               ✅
-//     a:30000 -> c:8888  (egress 处理)            ✅  [c:8888,a:30000]->[a:30000,b:443]
+//     a:30000 -> c:12345  (egress 处理)            ✅  [c:12345,a:30000]->[a:30000,b:443]
 //     重定向到 c ingress                          ✅
 //
-// c:8888 -> a:30000 (c egress hook)              ✅
+// c:12345 -> a:30000 (c egress hook)              ✅
 //     b:443 - > a:30000 (egress 处理)             ✅
 //         重定向到 a ingress                       ✅

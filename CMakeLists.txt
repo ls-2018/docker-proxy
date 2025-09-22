@@ -29,5 +29,6 @@ add_library(docker-proxy
         ebpf/tc-dns-replace.bpf.c
         ebpf/tc-proxy.bpf.c
         ebpf/xdp-proxy.bpf.c
+        ebpf/sk_lookup.bpf.c
 )
 

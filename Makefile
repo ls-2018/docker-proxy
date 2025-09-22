@@ -11,15 +11,10 @@ ifeq ($(ARCH), arm64)
 endif
 
 generate:
-	apt-get install net-tools docker.io tcpdump clang-format -y
-	ip link set docker-proxy down || true
-	ip link delete docker-proxy || true
 #	ip link add name docker-proxy type dummy
-#	ip addr add 10.1.5.10/32 dev docker-proxy
+#	ip addr add 10.1.5.9/32 dev docker-proxy
 #	ip link set dev docker-proxy address 08:00:27:6f:f7:c0
 #	ip link set docker-proxy up
-	sysctl -w net.ipv6.conf.all.disable_ipv6=1 || true
-	sysctl -w net.ipv6.conf.default.disable_ipv6=1 || true
 	TARGET_ARCH=__TARGET_ARCH_${ARCH_TYPE} go generate ./...
 
 build-assets:
@@ -28,3 +23,19 @@ build-assets:
 dlv: generate
 	go build -gcflags "all=-N -l" -o docker-proxy .
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./docker-proxy
+
+init:
+	apt-get install net-tools docker.io tcpdump clang-format -y || ture
+	ip link set docker-proxy down || true
+	ip link delete docker-proxy || true
+	sysctl -w net.ipv6.conf.all.disable_ipv6=1 || true
+	sysctl -w net.ipv6.conf.default.disable_ipv6=1 || true
+
+fmt:
+	clangformat.sh `pwd`/ebpf
+
+run: generate
+	go run .
+
+test:
+	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://127.0.0.1:443/health

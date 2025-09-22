@@ -8,7 +8,7 @@ import (
 )
 
 func TestR(t *testing.T) {
-	ln, err := net.Listen("tcp", "127.0.0.1:8888")
+	ln, err := net.Listen("tcp", "127.0.0.1:12345")
 	if err != nil {
 		t.Fatal(err)
 	}

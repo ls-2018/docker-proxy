@@ -1,4 +1,4 @@
-package tc_proxy
+package sk_lookup
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/cilium/ebpf/link"
 )
 
-//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  tc_proxy ../../../ebpf/tc-proxy.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
+//go:generate go run -mod=vendor github.com/cilium/ebpf/cmd/bpf2go -type proxy_redirect_config  sk_lookup ../../../ebpf/sk-lookup.bpf.c -- -D${TARGET_ARCH} -I./../../../ebpf/headers -Wall -Wno-unused-variable  -Wno-unused-function
 
 func Load(ctx context.Context, opt cfg.Options) {
 	ipTtlMap, err := ebpf.LoadPinnedMap("/sys/fs/bpf/docker-proxy/ip_ttl",
@@ -25,8 +25,8 @@ func Load(ctx context.Context, opt cfg.Options) {
 		log.L.Fatal(err)
 	}
 
-	obj := tc_proxyObjects{}
-	err = loadTc_proxyObjects(&obj, &ebpf.CollectionOptions{
+	obj := sk_lookupObjects{}
+	err = loadSk_lookupObjects(&obj, &ebpf.CollectionOptions{
 		Programs: ebpf.ProgramOptions{
 			LogLevel:     ebpf.LogLevelInstruction | ebpf.LogLevelBranch | ebpf.LogLevelStats,
 			LogSizeStart: 8 * 1024 * 1024 * 10,
@@ -54,7 +54,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 	// 附加 egress 程序 (出站流量)
 	tcxEgress, err := link.AttachTCX(link.TCXOptions{
 		Interface: outIfindex,
-		Program:   obj.tc_proxyPrograms.RawEgress,
+		Program:   obj.sk_lookupPrograms.Tproxy,
 		Attach:    ebpf.AttachTCXEgress,
 	})
 	if err != nil {
@@ -62,40 +62,30 @@ func Load(ctx context.Context, opt cfg.Options) {
 	}
 
 	var key0 int32 = 0 // hook eth
-	var prc = tc_proxyProxyRedirectConfig{
+	var prc = sk_lookupProxyRedirectConfig{
 		Addr:    utils.Ip2Uint32(outerIp),
 		Ifindex: uint16(outIfindex),
 		Mac:     HandleNullMac(outerMac),
 	}
-	err = obj.tc_proxyMaps.RedirectMap.Update(unsafe.Pointer(&key0), unsafe.Pointer(&prc), ebpf.UpdateAny)
+	err = obj.sk_lookupMaps.RedirectMap.Update(unsafe.Pointer(&key0), unsafe.Pointer(&prc), ebpf.UpdateAny)
 	if err != nil {
 		panic(err)
 	}
 
 	var key1 int32 = 1 // proxy eth
-	var prd = tc_proxyProxyRedirectConfig{
+	var prd = sk_lookupProxyRedirectConfig{
 		Addr:    utils.Ip2Uint32(eth.ProxyIp),
 		Port:    utils.HostToNetShort(uint16(opt.Port)),
 		Ifindex: uint16(eth.ProxyIf),
 		Mac:     HandleNullMac(eth.ProxyMac),
 	}
-	err = obj.tc_proxyMaps.RedirectMap.Update(unsafe.Pointer(&key1), unsafe.Pointer(&prd), ebpf.UpdateAny)
-	if err != nil {
-		panic(err)
-	}
-
-	proxyEgress, err := link.AttachTCX(link.TCXOptions{
-		Interface: int(prd.Ifindex),
-		Program:   obj.tc_proxyPrograms.ProxyEgress,
-		Attach:    ebpf.AttachTCXEgress,
-	})
+	err = obj.sk_lookupMaps.RedirectMap.Update(unsafe.Pointer(&key1), unsafe.Pointer(&prd), ebpf.UpdateAny)
 	if err != nil {
 		panic(err)
 	}
 
 	<-ctx.Done()
 	tcxEgress.Close()
-	proxyEgress.Close()
 }
 
 func HandleNullMac(mac string) [6]uint8 {

@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 	"docker-proxy/pkg/cfg"
-	tc_dns_parse "docker-proxy/pkg/ebpf/tc-dns-parse"
 	//tc_proxy "docker-proxy/pkg/ebpf/tc-proxy"
-	xdp_proxy "docker-proxy/pkg/ebpf/xdp-proxy"
+	// 	xdp_proxy "docker-proxy/pkg/ebpf/xdp-proxy"
 	"docker-proxy/pkg/eth"
 	"docker-proxy/pkg/log"
 	"flag"
@@ -21,7 +20,7 @@ import (
 
 func main() {
 	opt := cfg.Options{}
-	flag.Uint64Var(&opt.Port, "port", 8888, "backend docker speed service")
+	flag.Uint64Var(&opt.Port, "port", 12345, "backend docker speed service")
 	flag.StringVar(&opt.Dest, "dest", "dockerproxy.zetyun.cn", "backend docker speed service")
 	flag.StringVar(&opt.Domains, "domains", "docker.io,registry-1.docker.io", "addresses requiring acceleration, separated by commas")
 	flag.StringVar(&opt.PinPath, "pin-path", "/sys/fs/bpf/docker-proxy", "bpf pin path")
@@ -50,10 +49,11 @@ func main() {
 	context.Background()
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	// 	go tc_dns_replace.Load(ctx)
-	go tc_dns_parse.Load(ctx, opt, func() {
-		//go tc_proxy.Load(ctx, opt)
-		go xdp_proxy.Load(ctx, opt)
-	})
+	//go tc_dns_parse.Load(ctx, opt, func() {
+	//	go sk_lookup.Load(ctx, opt)
+	//go tc_proxy.Load(ctx, opt)
+	// 		go xdp_proxy.Load(ctx, opt)
+	//})
 	svc := http.Serve(opt)
 
 	<-stopper

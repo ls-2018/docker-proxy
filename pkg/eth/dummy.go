@@ -9,7 +9,7 @@ import (
 const ProxyName = "docker-proxy"
 
 // ProxyIp 与 eBPF 重定向一致，确保发往该 IP:port 的包被内核认为是本机
-var ProxyIp = "10.5.1.10"
+var ProxyIp = "10.5.1.9"
 
 // ProxyMac 由系统分配后回读，避免与实际不一致
 var ProxyMac = ""
@@ -18,8 +18,9 @@ var ProxyIf = 0
 func InitDev() {
 	link, err := netlink.LinkByName(ProxyName)
 	if err == nil {
-		netlink.LinkSetDown(link)
-		netlink.LinkDel(link)
+		ProxyMac = link.Attrs().HardwareAddr.String()
+		ProxyIf = link.Attrs().Index
+		return
 	}
 
 	// 1. 创建 dummy 网卡
@@ -39,7 +40,7 @@ func InitDev() {
 	}
 	ProxyIf = int(link.Attrs().Index)
 
-	// 2. 添加 IP 地址 10.1.5.10/32
+	// 2. 添加 IP 地址 10.1.5.9/32
 	addr, err := netlink.ParseAddr(ProxyIp + "/32")
 	if err != nil {
 		log.L.Fatalf("failed to parse addr: %v", err)

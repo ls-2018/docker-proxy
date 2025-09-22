@@ -133,7 +133,7 @@ func installCALinux(caPath string) {
 		// Debian/Ubuntu
 		run("sudo", "cp", caPath, "/usr/local/share/ca-certificates/")
 		run("sudo", "update-ca-certificates")
-		log.L.Println("✅ 已安装 CA 到 Debian/Ubuntu 系统证书库")
+		log.L.Println("✅ 已安装 CA 到 Debian/Ubuntu 系统证书库 /usr/local/share/ca-certificates/ ")
 	} else if _, err := os.Stat("/etc/pki/ca-trust/source/anchors/"); err == nil {
 		// CentOS/RHEL
 		run("sudo", "cp", caPath, "/etc/pki/ca-trust/source/anchors/")

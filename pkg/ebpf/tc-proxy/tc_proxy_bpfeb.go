@@ -24,9 +24,10 @@ type tc_proxyConnectionInfo struct {
 type tc_proxyProxyRedirectConfig struct {
 	_       structs.HostLayout
 	Addr    uint32
-	Port    uint32
+	Port    uint16
 	Ifindex uint16
 	Mac     [6]uint8
+	_       [2]byte
 }
 
 // loadTc_proxy returns the embedded CollectionSpec for tc_proxy.
@@ -88,7 +89,6 @@ type tc_proxyMapSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type tc_proxyVariableSpecs struct {
-	Unused3 *ebpf.VariableSpec `ebpf:"unused3"`
 }
 
 // tc_proxyObjects contains all objects after they have been loaded into the kernel.
@@ -128,7 +128,6 @@ func (m *tc_proxyMaps) Close() error {
 //
 // It can be passed to loadTc_proxyObjects or ebpf.CollectionSpec.LoadAndAssign.
 type tc_proxyVariables struct {
-	Unused3 *ebpf.Variable `ebpf:"unused3"`
 }
 
 // tc_proxyPrograms contains all programs after they have been loaded into the kernel.
