@@ -1,0 +1,35 @@
+modprobe dummy
+
+# 创建一个 dummy 网卡
+ip link add dummy0 type dummy
+
+# 启动并配置 IP
+ip addr add 192.168.100.1/24 dev dummy0
+ip link set dummy0 up
+
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
+
+
+
+Outbound Egress (eth0):
+拦截从客户端 发往 111.45.1.74:443 的数据包，并将其目标 IP 和端口修改为 192.168.100.1:8888 。
+将其重定向到net0 的 ingress
+Inbound Ingress (net0):
+ 将重定向的包 发往 192.168.100.1:8888 应用程序
+Outbound Egress (net0):
+将 192.168.100.1:8888 返回的数据包，源改为111.45.1.74:443  并将其发送到eth0  的 ingress
+Inbound Ingress (eth0):
+使用ebpf 的 tc egress ingress 实现
+
+
+
+
+通过这个命令测试，与预期不符
+
+那进行测试吧
+python3 -m http.server --bind 192.168.100.1 8888
+./network_proxy
+curl --max-time 5 http://111.45.1.74:443
+分别三个终端执行，看有没有数据返回
