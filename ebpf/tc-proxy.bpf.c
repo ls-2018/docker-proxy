@@ -71,7 +71,7 @@ long redirect_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp)
 
     // 存储连接映射
     bpf_map_update_elem(&connection_map, &proxy_conn, &original_conn, BPF_ANY);
-    bpf_printk("query   from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &ip->saddr, bpf_ntohs(tcp->source), &ip->daddr, bpf_ntohs(tcp->dest), &ip->saddr, bpf_ntohs(tcp->source), &proxy_eth->addr, proxy_eth->port);
+    bpf_printk("query   from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &ip->saddr, bpf_ntohs(tcp->source), &ip->daddr, bpf_ntohs(tcp->dest), &ip->saddr, bpf_ntohs(tcp->source), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
 
     /* DNAT */
     set_dst_mac(skb, (char *)&proxy_eth->mac);

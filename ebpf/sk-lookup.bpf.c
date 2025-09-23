@@ -89,8 +89,7 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
     server.ipv4.daddr = proxy_eth->addr;
     server.ipv4.sport = tuple->ipv4.sport;
     server.ipv4.dport = proxy_eth->port;
-    bpf_printk("lookup tcp  %pI4:%d -> %pI4:%d", &server.ipv4.saddr,bpf_ntohs( server.ipv4.sport),&server.ipv4.daddr,bpf_ntohs(server.ipv4.dport));
-
+    bpf_printk("lookup change tcp %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &tuple->ipv4.saddr, bpf_ntohs(tuple->ipv4.sport), &tuple->ipv4.daddr, bpf_ntohs(tuple->ipv4.dport), &tuple->ipv4.saddr, bpf_ntohs(tuple->ipv4.sport), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
 
     sk = bpf_skc_lookup_tcp(skb, tuple, tuple_len, BPF_F_CURRENT_NETNS, 0);
     if (sk) {
@@ -100,10 +99,9 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
         bpf_sk_release(sk);
     }
 
-
     sk = bpf_skc_lookup_tcp(skb, &server, tuple_len, BPF_F_CURRENT_NETNS, 0);
     if (!sk) {
-        return TC_ACT_OK; // ToDo 卡在了这里
+        return TC_ACT_OK; 
     }
     if (sk->state != BPF_TCP_LISTEN) {
         bpf_sk_release(sk);
@@ -111,8 +109,8 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
     }
 
 assign:
-    bpf_printk("f");
-    ret = bpf_sk_assign(skb, sk, 0);
+    ret = bpf_sk_assign(skb, sk, 0); // 只能用在 tc ingress
+    bpf_printk("f %d", ret);
     bpf_sk_release(sk);
     return ret;
 }

@@ -55,7 +55,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 	tcxEgress, err := link.AttachTCX(link.TCXOptions{
 		Interface: outIfindex,
 		Program:   obj.sk_lookupPrograms.Tproxy,
-		Attach:    ebpf.AttachTCXIngress,
+		Attach:    ebpf.AttachTCXEgress,
 	})
 	if err != nil {
 		panic(err)

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"docker-proxy/pkg/cfg"
-	sk_lookup "docker-proxy/pkg/ebpf/sk-lookup"
 	tc_dns_parse "docker-proxy/pkg/ebpf/tc-dns-parse"
+	tc_proxy "docker-proxy/pkg/ebpf/tc-proxy"
 
 	//tc_proxy "docker-proxy/pkg/ebpf/tc-proxy"
 	// 	xdp_proxy "docker-proxy/pkg/ebpf/xdp-proxy"
@@ -53,9 +53,9 @@ func main() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	// 	go tc_dns_replace.Load(ctx)
 	go tc_dns_parse.Load(ctx, opt, func() {
-		go sk_lookup.Load(ctx, opt)
-		//go tc_proxy.Load(ctx, opt)
-		// 		go xdp_proxy.Load(ctx, opt)
+		//go sk_lookup.Load(ctx, opt)
+		go tc_proxy.Load(ctx, opt)
+		//go xdp_proxy.Load(ctx, opt)
 	})
 	svc := http.Serve(opt)
 
