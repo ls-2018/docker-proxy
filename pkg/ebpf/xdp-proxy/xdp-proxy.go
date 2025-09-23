@@ -52,7 +52,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 
 	var key0 int32 = 0 // hook eth
 	var prc = xdp_proxyProxyRedirectConfig{
-		Addr:    utils.Ip2Uint32(outerIp),
+		Addr:    utils.Ip2BeUint32(outerIp),
 		Ifindex: uint16(outIfindex),
 		Mac:     HandleNullMac(outerMac),
 	}
@@ -63,7 +63,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 
 	var key1 int32 = 1 // proxy eth
 	var prd = xdp_proxyProxyRedirectConfig{
-		Addr:    utils.Ip2Uint32(outerIp),
+		Addr:    utils.Ip2BeUint32(outerIp),
 		Port:    uint32(opt.Port),
 		Ifindex: uint16(outIfindex),
 		Mac:     HandleNullMac(outerMac),

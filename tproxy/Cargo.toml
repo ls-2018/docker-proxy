@@ -1,0 +1,18 @@
+[package]
+name = "tproxy"
+version = "0.1.0"
+authors = ["Daniel Xu <dxu@dxuuu.xyz>"]
+license = "LGPL-2.1-only OR BSD-2-Clause"
+
+[build-dependencies]
+libbpf-cargo = "0.25.0"
+vmlinux = { git = "https://github.com/libbpf/vmlinux.h.git", rev = "83a228cf37fc65f2d14e4896a04922b5ee531a94" }
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.0.32", default-features = false, features = ["std", "derive", "help", "usage"] }
+ctrlc = "3.2"
+libbpf-cargo = "0.25.0"
+libbpf-rs = "0.25.0"
+nix = { version = "0.28", default-features = false, features = ["net", "user"] }
+

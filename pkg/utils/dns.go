@@ -63,7 +63,7 @@ func U32ToIP(ip uint32) string {
 	return net.IP(b).String()
 }
 
-func Ip2Uint32(ip string) uint32 {
+func Ip2BeUint32(ip string) uint32 {
 	ip = strings.TrimSpace(ip)
 	return binary.LittleEndian.Uint32(net.ParseIP(ip).To4())
 

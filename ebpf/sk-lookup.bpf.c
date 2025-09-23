@@ -73,11 +73,6 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
     if ((void *)tuple + tuple_len > (void *)(long)skb->data_end)
         return TC_ACT_OK;
 
-    __u32 pkey0 = 0;
-    struct proxy_redirect_config *hook_eth = bpf_map_lookup_elem(&redirect_map, &pkey0);
-    if (hook_eth == NULL) {
-        return TC_ACT_OK;
-    }
     u32 *ttl;
     ttl = bpf_map_lookup_elem(&ip_ttl, &tuple->ipv4.daddr);
     if (!ttl)
@@ -89,6 +84,14 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
         return TC_ACT_OK;
     }
 
+    /* Lookup port server is listening on */
+    server.ipv4.saddr = tuple->ipv4.saddr;
+    server.ipv4.daddr = proxy_eth->addr;
+    server.ipv4.sport = tuple->ipv4.sport;
+    server.ipv4.dport = proxy_eth->port;
+    bpf_printk("lookup tcp  %pI4:%d -> %pI4:%d", &server.ipv4.saddr,bpf_ntohs( server.ipv4.sport),&server.ipv4.daddr,bpf_ntohs(server.ipv4.dport));
+
+
     sk = bpf_skc_lookup_tcp(skb, tuple, tuple_len, BPF_F_CURRENT_NETNS, 0);
     if (sk) {
         if (sk->state != BPF_TCP_LISTEN) {
@@ -97,20 +100,14 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
         bpf_sk_release(sk);
     }
 
-    /* Lookup port server is listening on */
-    server.ipv4.saddr = tuple->ipv4.saddr;
-    server.ipv4.sport = tuple->ipv4.sport;
-    server.ipv4.daddr = proxy_eth->addr;
-    server.ipv4.dport = proxy_eth->port;
-    bpf_printk("lookup tcp  %pI4:%d -> %pI4:%d", &server.ipv4.saddr,bpf_ntohs( server.ipv4.sport),&server.ipv4.daddr,bpf_ntohs(server.ipv4.dport));
 
     sk = bpf_skc_lookup_tcp(skb, &server, tuple_len, BPF_F_CURRENT_NETNS, 0);
     if (!sk) {
-        return TC_ACT_SHOT; // ToDo 卡在了这里
+        return TC_ACT_OK; // ToDo 卡在了这里
     }
     if (sk->state != BPF_TCP_LISTEN) {
         bpf_sk_release(sk);
-        return TC_ACT_SHOT;
+        return TC_ACT_OK;
     }
 
 assign:

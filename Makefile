@@ -10,6 +10,10 @@ ifeq ($(ARCH), arm64)
     ARCH_TYPE := arm64
 endif
 
+ping:
+	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://127.0.0.1:12345/health
+	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://67.228.235.91:443/health
+
 generate:
 #	ip link add name docker-proxy type dummy
 #	ip addr add 10.1.5.9/32 dev docker-proxy
@@ -25,6 +29,7 @@ dlv: generate
 	dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./docker-proxy
 
 init:
+	echo 'nameserver 114.114.114.114' > /run/systemd/resolve/stub-resolv.conf
 	apt-get install net-tools docker.io tcpdump clang-format -y || ture
 	ip link set docker-proxy down || true
 	ip link delete docker-proxy || true
@@ -36,6 +41,3 @@ fmt:
 
 run: generate
 	go run .
-
-test:
-	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://127.0.0.1:443/health

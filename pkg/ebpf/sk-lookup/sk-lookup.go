@@ -55,7 +55,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 	tcxEgress, err := link.AttachTCX(link.TCXOptions{
 		Interface: outIfindex,
 		Program:   obj.sk_lookupPrograms.Tproxy,
-		Attach:    ebpf.AttachTCXEgress,
+		Attach:    ebpf.AttachTCXIngress,
 	})
 	if err != nil {
 		panic(err)
@@ -63,7 +63,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 
 	var key0 int32 = 0 // hook eth
 	var prc = sk_lookupProxyRedirectConfig{
-		Addr:    utils.Ip2Uint32(outerIp),
+		Addr:    utils.Ip2BeUint32(outerIp),
 		Ifindex: uint16(outIfindex),
 		Mac:     HandleNullMac(outerMac),
 	}
@@ -74,7 +74,7 @@ func Load(ctx context.Context, opt cfg.Options) {
 
 	var key1 int32 = 1 // proxy eth
 	var prd = sk_lookupProxyRedirectConfig{
-		Addr:    utils.Ip2Uint32(eth.ProxyIp),
+		Addr:    utils.Ip2BeUint32(eth.ProxyIp),
 		Port:    utils.HostToNetShort(uint16(opt.Port)),
 		Ifindex: uint16(eth.ProxyIf),
 		Mac:     HandleNullMac(eth.ProxyMac),
