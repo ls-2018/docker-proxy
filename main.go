@@ -120,6 +120,6 @@ func Run(opt cfg.Options) {
 	<-stopper
 	log.L.Println("Received signal, exiting program..")
 	cancelFunc()
-	svc.Shutdown(ctx)
 	eth.CleanDev()
+	svc.Shutdown(ctx)
 }

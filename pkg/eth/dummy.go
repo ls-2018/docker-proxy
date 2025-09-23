@@ -20,6 +20,9 @@ func CleanDev() {
 	if err == nil {
 		netlink.LinkSetDown(link)
 		netlink.LinkDel(link)
+		log.L.Printf("clean dev %s", ProxyName)
+	} else {
+		log.L.Printf("not find %s", ProxyName)
 	}
 }
 func InitDev() {
