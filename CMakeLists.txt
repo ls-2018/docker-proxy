@@ -30,5 +30,6 @@ add_library(docker-proxy
         ebpf/tc-proxy.bpf.c
         ebpf/xdp-proxy.bpf.c
         ebpf/sk_lookup.bpf.c
+        ebpf/kprobe__sys_connect.bpf.c
 )
 

@@ -5,7 +5,6 @@ import (
 	"docker-proxy/pkg/log"
 	"docker-proxy/pkg/utils"
 	"encoding/binary"
-	"fmt"
 	"net"
 	"unsafe"
 
@@ -63,7 +62,7 @@ func getKey(host string) tc_dns_replaceDnsQuestion {
 
 	for i, v := range dnsName {
 		if i+1 <= len(queryKey.Name) {
-			queryKey.Name[i] = int8(v)
+			queryKey.Name[i] = v
 		}
 	}
 	return queryKey

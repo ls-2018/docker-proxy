@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"docker-proxy/pkg/log"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -21,7 +22,7 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 	if r.Host == "registry-1.docker.io" {
 		domain = "docker.io"
 	}
-	ur := strings.Join([]string{"https://%s/v2", backendService, domain, target}, "/")
+	ur := strings.Join([]string{fmt.Sprintf("https://%s/v2", backendService), domain, target}, "/")
 	log.L.Println(r.Method, ur, r.Header)
 
 	req, err := http.NewRequest(r.Method, ur, r.Body)

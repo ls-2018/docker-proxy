@@ -15,13 +15,15 @@ var ProxyIp = "10.5.1.9"
 var ProxyMac = ""
 var ProxyIf = 0
 
-func InitDev() {
+func CleanDev() {
 	link, err := netlink.LinkByName(ProxyName)
 	if err == nil {
 		netlink.LinkSetDown(link)
 		netlink.LinkDel(link)
 	}
-
+}
+func InitDev() {
+	CleanDev()
 	// 1. 创建 dummy 网卡
 	dummy := &netlink.Dummy{
 		LinkAttrs: netlink.LinkAttrs{
@@ -33,11 +35,11 @@ func InitDev() {
 	}
 
 	// 获取刚创建的网卡
-	link, err = netlink.LinkByName(ProxyName)
+	link, err := netlink.LinkByName(ProxyName)
 	if err != nil {
 		log.L.Fatalf("failed to get dev: %v", err)
 	}
-	ProxyIf = int(link.Attrs().Index)
+	ProxyIf = link.Attrs().Index
 
 	// 2. 添加 IP 地址 10.1.5.9/32
 	addr, err := netlink.ParseAddr(ProxyIp + "/32")

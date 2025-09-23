@@ -17,7 +17,7 @@ import (
 )
 
 func Serve(opt cfg.Options) *http.Server {
-	certs := cert.GenerateCert(opt.DomainList)
+	certs := cert.GenerateCert(opt.Domains)
 	tlsConfig := cert.LoadCert(certs)
 	// 使用 ListenConfig + Control 设置 IP_TRANSPARENT
 	lc := net.ListenConfig{

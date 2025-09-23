@@ -3,35 +3,79 @@ package main
 import (
 	"context"
 	"docker-proxy/pkg/cfg"
-	tc_dns_parse "docker-proxy/pkg/ebpf/tc-dns-parse"
-	tc_proxy "docker-proxy/pkg/ebpf/tc-proxy"
-
-	//tc_proxy "docker-proxy/pkg/ebpf/tc-proxy"
-	// 	xdp_proxy "docker-proxy/pkg/ebpf/xdp-proxy"
+	sysconnect "docker-proxy/pkg/ebpf/krpobe__sys_connect"
+	sklookup "docker-proxy/pkg/ebpf/sk-lookup"
+	tcdnsparse "docker-proxy/pkg/ebpf/tc-dns-parse"
+	tcdnsreplace "docker-proxy/pkg/ebpf/tc-dns-replace"
+	tcproxy "docker-proxy/pkg/ebpf/tc-proxy"
+	xdpproxy "docker-proxy/pkg/ebpf/xdp-proxy"
 	"docker-proxy/pkg/eth"
-	"docker-proxy/pkg/log"
-	"flag"
-	"os"
-	"os/signal"
-	// 	tc_dns_replace "docker-proxy/pkg/ebpf/tc-dns-replace"
 	"docker-proxy/pkg/http"
 	"docker-proxy/pkg/kernel"
+	"docker-proxy/pkg/log"
+	"docker-proxy/pkg/systemd"
+	"fmt"
+	"os"
+	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/cilium/ebpf/rlimit"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
+var (
+	cfgFile string
+	opt     = cfg.Options{}
+	cmd     = &cobra.Command{
+		Run: func(cmd *cobra.Command, args []string) {
+			Run(opt)
+		},
+	}
+)
+
+func init() {
+	cobra.OnInitialize(initConfig)
+	cmd.PersistentFlags().Uint64Var(&opt.Port, "port", 12345, "back-end proxy service")
+	cmd.PersistentFlags().StringVar(&opt.Dest, "dest", "dockerproxy.zetyun.cn", "backend docker speed service")
+	cmd.PersistentFlags().StringArrayVar(&opt.Domains, "domains", []string{"docker.io", "registry-1.docker.io"}, "addresses requiring acceleration")
+	cmd.PersistentFlags().StringArrayVar(&opt.Service, "services", []string{"docker", "containerd"}, "after adding the system certificate, you need to restart the CRI advanced backend program.")
+	cmd.PersistentFlags().StringVar(&opt.PinPath, "pin-path", "/sys/fs/bpf/docker-proxy", "bpf pin path")
+	cmd.PersistentFlags().IntVar(&opt.Method, "method", 1, strings.TrimSpace(`
+0: dns replace, client -> proxy				(TODO)
+1: dns parse + kprobe/__sys_connect			(✅)
+2: dns parse + sklookup 					(❌ only handle tc ingress)
+3: dns parse + tcproxy  					(bug: DNAT、SNAT)
+4: dns parse + xdpproxy 					(❌ only handle dev ingress)`))
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
+
+		// Search config in home directory with name ".cobra" (without extension).
+		viper.AddConfigPath(home)
+		viper.SetConfigType("yaml")
+		viper.SetConfigName(".cobra")
+	}
+	viper.AutomaticEnv()
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+}
+
 func main() {
-	opt := cfg.Options{}
-	flag.Uint64Var(&opt.Port, "port", 12345, "backend docker speed service")
-	flag.StringVar(&opt.Dest, "dest", "dockerproxy.zetyun.cn", "backend docker speed service")
-	flag.StringVar(&opt.Domains, "domains", "docker.io,registry-1.docker.io", "addresses requiring acceleration, separated by commas")
-	flag.StringVar(&opt.PinPath, "pin-path", "/sys/fs/bpf/docker-proxy", "bpf pin path")
-	flag.Parse()
-	opt.Apply()
+	cmd.Execute()
+}
+
+func Run(opt cfg.Options) {
 	os.MkdirAll(opt.PinPath, 0755)
-	// 环境检测
-	// 系统内核版本检测
 	kv, err := kernel.HostVersion()
 	if err != nil {
 		log.L.Fatal(err)
@@ -51,51 +95,31 @@ func main() {
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
 	context.Background()
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	// 	go tc_dns_replace.Load(ctx)
-	go tc_dns_parse.Load(ctx, opt, func() {
-		//go sk_lookup.Load(ctx, opt)
-		go tc_proxy.Load(ctx, opt)
-		//go xdp_proxy.Load(ctx, opt)
-	})
-	svc := http.Serve(opt)
+	switch opt.Method {
+	case 0:
+		go tcdnsreplace.Load(ctx)
+	default:
+		go tcdnsparse.Load(ctx, opt, func() {
+			switch opt.Method {
+			case 1:
+				go sysconnect.Load(ctx, opt)
+			case 2:
+				go sklookup.Load(ctx, opt) // 不支持
+			case 3:
+				go tcproxy.Load(ctx, opt)
+			case 4:
+				go xdpproxy.Load(ctx, opt)
+			default:
+				log.L.Fatalf("unknown hook method: %d", opt.Method)
+			}
+		})
+	}
 
+	svc := http.Serve(opt)
+	systemd.Restart(opt.Service)
 	<-stopper
 	log.L.Println("Received signal, exiting program..")
 	cancelFunc()
 	svc.Shutdown(ctx)
-
-}
-
-func mai4n() {
-	// Allow the current process to lock memory for eBPF resources.
-	//if err := rlimit.RemoveMemlock(); err != nil {
-	//	log.L.Fatal(err)
-	//}
-	//// 加载编译好的 eBPF 程序
-	//objs := tcObjects{}
-	//if err := loadTcObjects(&objs, nil); err != nil {
-	//	log.L.Fatalf("loading objects: %v", err)
-	//}
-	//defer objs.Close()
-	//
-	//// 打开 cgroup
-	//cg, err := os.Open("/sys/fs/cgroup/")
-	//if err != nil {
-	//	log.L.Fatalf("open cgroup: %v", err)
-	//}
-	//defer cg.Close()
-	//
-	//// Attach eBPF program
-	//l, err := link.AttachCgroup(link.CgroupOptions{
-	//	Path:    cg.Name(),
-	//	Attach:  ebpf.AttachCGroupInet4Connect, // connect4
-	//	Program: objs.RedirectConnect,
-	//})
-	//if err != nil {
-	//	log.L.Fatalf("attach program: %v", err)
-	//}
-	//defer l.Close()
-	//
-	//log.L.Println("eBPF cgroup/connect4 program attached. Press Ctrl+C to exit.")
-	//select {}
+	eth.CleanDev()
 }

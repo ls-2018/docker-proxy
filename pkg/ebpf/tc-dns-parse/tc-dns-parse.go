@@ -33,10 +33,6 @@ func Load(ctx context.Context, opt cfg.Options, successCallBack func()) {
 		},
 		Maps: ebpf.MapOptions{
 			PinPath: opt.PinPath,
-			//LoadPinOptions: ebpf.LoadPinOptions{
-			//	ReadOnly:  false,
-			//	WriteOnly: false,
-			//},
 		},
 	})
 	if err != nil {
@@ -56,12 +52,10 @@ func Load(ctx context.Context, opt cfg.Options, successCallBack func()) {
 	if err != nil {
 		panic(err)
 	}
-	for _, domain := range opt.DomainList {
+	for _, domain := range opt.Domains {
 		key := getKey(domain)
 		obj.tc_dns_parseMaps.DnsA_cache.Update(&key, &tc_dns_parseCacheRecord{}, ebpf.UpdateAny)
 	}
-	log.L.Println("tc dns parse attached")
-
 	rd, err := ringbuf.NewReader(obj.Events)
 	if err != nil {
 		log.L.Fatalf("opening ringbuf reader: %s", err)
@@ -140,7 +134,6 @@ func getUptimeFromProc() (time.Duration, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	return time.Duration(secs * float64(time.Second)), nil
 }
 
@@ -181,5 +174,5 @@ func Clean(ctx context.Context, ttl *ebpf.Map) {
 
 //tc qdisc  delete dev eth0 clsact
 //tc qdisc  add    dev eth0 clsact
-//tc filter add dev eth0 ingress bpf obj tc_dns_parse_bpfel.o sec 'classifier/ingress' > a.txt 2>&1
-//tc filter show dev eth0 ingress
+//tc filter add    dev eth0 ingress bpf obj tc_dns_parse_bpfel.o sec 'classifier/ingress' > a.txt 2>&1
+//tc filter show   dev eth0 ingress

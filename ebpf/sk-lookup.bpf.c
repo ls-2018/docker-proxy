@@ -101,7 +101,7 @@ static inline int handle_tcp(struct __sk_buff *skb, struct bpf_sock_tuple *tuple
 
     sk = bpf_skc_lookup_tcp(skb, &server, tuple_len, BPF_F_CURRENT_NETNS, 0);
     if (!sk) {
-        return TC_ACT_OK; 
+        return TC_ACT_OK;
     }
     if (sk->state != BPF_TCP_LISTEN) {
         bpf_sk_release(sk);

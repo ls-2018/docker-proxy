@@ -19,6 +19,8 @@ generate:
 #	ip addr add 10.1.5.9/32 dev docker-proxy
 #	ip link set dev docker-proxy address 08:00:27:6f:f7:c0
 #	ip link set docker-proxy up
+	go mod tidy
+	go mod vendor
 	TARGET_ARCH=__TARGET_ARCH_${ARCH_TYPE} go generate ./...
 
 build-assets:
