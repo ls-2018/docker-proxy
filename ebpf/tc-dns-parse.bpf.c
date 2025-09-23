@@ -174,7 +174,7 @@ int parse_dns_a(struct __sk_buff *skb) {
             cr_tmp.ttl[i] = ttl;
             u32 expire_time = unix_secs / 1000000000 + ttl;
             bpf_map_update_elem(&ip_ttl, &ip, &expire_time, BPF_ANY);
-            bpf_printk("type:%d class:%d ip:%pI4 ttl:%d cs:%lld ttl:%lld ", type, class, &ip, ttl, unix_secs, ttl);
+//            bpf_printk("type:%d class:%d ip:%pI4 ttl:%d cs:%lld ttl:%lld ", type, class, &ip, ttl, unix_secs, ttl);
             found = 1;
         }
         answer_header += rdlen;
