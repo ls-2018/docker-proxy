@@ -18,9 +18,8 @@ var ProxyIf = 0
 func InitDev() {
 	link, err := netlink.LinkByName(ProxyName)
 	if err == nil {
-		ProxyMac = link.Attrs().HardwareAddr.String()
-		ProxyIf = link.Attrs().Index
-		return
+		netlink.LinkSetDown(link)
+		netlink.LinkDel(link)
 	}
 
 	// 1. 创建 dummy 网卡

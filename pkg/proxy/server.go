@@ -12,7 +12,7 @@ var backendService = ""
 func proxy(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.URL.String(), "health") {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Write([]byte("OK\n"))
 		return
 	}
 	log.L.Println("✈️ ", r.Host, r.Method, r.URL.String())

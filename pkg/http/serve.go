@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"docker-proxy/pkg/cert"
 	"docker-proxy/pkg/cfg"
+	"docker-proxy/pkg/eth"
 	"docker-proxy/pkg/log"
 	"docker-proxy/pkg/proxy"
 	"fmt"
@@ -36,7 +37,7 @@ func Serve(opt cfg.Options) *http.Server {
 		},
 	}
 	// 建立 TCP Listener
-	ln, err := lc.Listen(context.Background(), "tcp", fmt.Sprintf(":%d", opt.Port))
+	ln, err := lc.Listen(context.Background(), "tcp", fmt.Sprintf("%s:%d", eth.ProxyIp, opt.Port))
 	if err != nil {
 		log.L.Fatalf("listen: %v", err)
 	}
