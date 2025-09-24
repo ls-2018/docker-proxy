@@ -9,10 +9,7 @@ endif
 ifeq ($(ARCH), arm64)
     ARCH_TYPE := arm64
 endif
-
-ping:
-	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://10.5.1.9:12345/health
-	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://67.228.235.91:443/health
+all:
 
 generate:
 #	ip link add name docker-proxy type dummy
@@ -43,3 +40,7 @@ fmt:
 
 run: generate
 	go run .
+
+ping:
+	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://10.5.1.9:12345/health
+	curl --insecure --cacert /usr/local/share/ca-certificates/ca.crt -H 'Host: docker.io' https://67.228.235.91:443/health

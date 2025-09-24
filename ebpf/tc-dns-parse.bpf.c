@@ -80,14 +80,16 @@ int parse_dns_a(struct __sk_buff *skb) {
     struct dns_header *dr = (struct dns_header *)dns;
     __u16 transaction_id = bpf_ntohs(dr->transaction_id);
     __u16 qdcount = bpf_ntohs(dr->q_count);
-    __u16 ancount = bpf_ntohs(dr->ans_count);
-    __u16 flags = bpf_ntohs(*(__u16 *)(dns + 2)); // ID 后面 2 字节是 flags
-    __u16 qr = (flags >> 15) & 0x1;
-
-    if (qr != 1) {
+    if (qdcount != 1) {
         return TC_ACT_OK;
     }
-    if (qdcount != 1) {
+
+    __u16 ancount = bpf_ntohs(dr->ans_count);
+    __u16 flags = bpf_ntohs(*(__u16 *)(dns + 2)); // ID 后面 2 字节是 flags
+    __u16 qr = (flags & 0x80 >> 15);
+//    __u16 qr = (flags >> 15) & 0x1;  // 5.15.0 不支持
+
+    if (qr != 1) {
         return TC_ACT_OK;
     }
 
@@ -174,7 +176,7 @@ int parse_dns_a(struct __sk_buff *skb) {
             cr_tmp.ttl[i] = ttl;
             u32 expire_time = unix_secs / 1000000000 + ttl;
             bpf_map_update_elem(&ip_ttl, &ip, &expire_time, BPF_ANY);
-//            bpf_printk("type:%d class:%d ip:%pI4 ttl:%d cs:%lld ttl:%lld ", type, class, &ip, ttl, unix_secs, ttl);
+            //            bpf_printk("type:%d class:%d ip:%pI4 ttl:%d cs:%lld ttl:%lld ", type, class, &ip, ttl, unix_secs, ttl);
             found = 1;
         }
         answer_header += rdlen;

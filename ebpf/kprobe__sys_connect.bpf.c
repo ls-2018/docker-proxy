@@ -41,7 +41,7 @@ int kprobe_connect(struct pt_regs *ctx) {
         if (proxy_eth == NULL) {
             return TC_ACT_OK;
         }
-//        bpf_printk("%pI4:%d -> %pI4:%d ", &addr.sin_addr.s_addr, bpf_ntohs(addr.sin_port), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
+        //        bpf_printk("%pI4:%d -> %pI4:%d ", &addr.sin_addr.s_addr, bpf_ntohs(addr.sin_port), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
 
         addr.sin_addr.s_addr = proxy_eth->addr;
         addr.sin_port = proxy_eth->port;
