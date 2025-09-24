@@ -5,9 +5,10 @@ import (
 	"docker-proxy/pkg/cfg"
 	sysconnect "docker-proxy/pkg/ebpf/krpobe__sys_connect"
 	sklookup "docker-proxy/pkg/ebpf/sk-lookup"
-	tcdnsparse "docker-proxy/pkg/ebpf/tc-dns-parse"
+	//tcdnsparse "docker-proxy/pkg/ebpf/tc-dns-parse"
 	tcdnsreplace "docker-proxy/pkg/ebpf/tc-dns-replace"
 	tcproxy "docker-proxy/pkg/ebpf/tc-proxy"
+	xdpdnsparse "docker-proxy/pkg/ebpf/xdp-dns-parse"
 	xdpproxy "docker-proxy/pkg/ebpf/xdp-proxy"
 	"docker-proxy/pkg/eth"
 	"docker-proxy/pkg/http"
@@ -49,6 +50,8 @@ func init() {
 3: dns parse + tcproxy  					(bug: DNAT、SNAT)
 4: dns parse + xdpproxy 					(❌ only handle dev ingress)`))
 }
+
+// tcx need >= 6.6
 
 func initConfig() {
 	if cfgFile != "" {
@@ -99,7 +102,7 @@ func Run(opt cfg.Options) {
 	case 0:
 		go tcdnsreplace.Load(ctx)
 	default:
-		go tcdnsparse.Load(ctx, opt, func() {
+		go xdpdnsparse.Load(ctx, opt, func() {
 			switch opt.Method {
 			case 1:
 				go sysconnect.Load(ctx, opt)
