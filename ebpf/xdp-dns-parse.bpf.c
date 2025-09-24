@@ -182,7 +182,7 @@ skip:
     if (found) {
         bpf_printk("found");
         bpf_map_update_elem(&dns_a_cache, &dq, &cr_tmp, BPF_ANY);
-        bpf_printk("class %d record_type %d", dq.class, dq.record_type);
+        bpf_printk("class %d record_type %d", dq.class, dq.record_type); // 5.8
 
         struct dns_peer *event;
         event = bpf_ringbuf_reserve(&events, sizeof(struct dns_peer), 0);

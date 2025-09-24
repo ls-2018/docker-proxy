@@ -7,3 +7,9 @@
 - 代理程序 ---> (dockerproxy.zetyun.cn)
 - 然后将代理程序获得数据 返回 docker pull
 ```
+
+
+
+- bpf_printk 5.8
+- guard_ringbuf 待定
+- tcx  6.6
