@@ -44,11 +44,14 @@ func init() {
 	cmd.PersistentFlags().StringArrayVar(&opt.Service, "services", []string{"docker", "containerd"}, "after adding the system certificate, you need to restart the CRI advanced backend program.")
 	cmd.PersistentFlags().StringVar(&opt.PinPath, "pin-path", "/sys/fs/bpf/docker-proxy", "bpf pin path")
 	cmd.PersistentFlags().IntVar(&opt.Method, "method", 1, strings.TrimSpace(`
-0: dns replace, client -> proxy				(TODO)
-1: dns parse + kprobe/__sys_connect			(✅)
-2: dns parse + sklookup 					(❌ only handle tc ingress)
-3: dns parse + tcproxy  					(bug: DNAT、SNAT)
-4: dns parse + xdpproxy 					(❌ only handle dev ingress)`))
+0: tc dns replace, client -> proxy				(TODO)
+1: tc  dns parse + kprobe/__sys_connect			(✅)
+2: xdp dns parse + kprobe/__sys_connect			(✅)
+3: tc dns parse + sklookup 						(❌ only handle tc ingress)
+4: tc dns parse + tcproxy  						(bug: DNAT、SNAT)
+5: tc dns parse + xdpproxy 						(❌ only handle dev ingress)
+
+`))
 }
 
 // tcx need >= 6.6
