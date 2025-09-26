@@ -47,10 +47,13 @@ func init() {
 0: tc dns replace, client -> proxy				(TODO)
 1: tc  dns parse + kprobe/__sys_connect			(✅)
 2: xdp dns parse + kprobe/__sys_connect			(✅)
-3: tc dns parse + sklookup 						(❌ only handle tc ingress)
-4: tc dns parse + tcproxy  						(bug: DNAT、SNAT)
+3: tc dns parse + sklookup 						(❌ only handle tc ingress )
+4: tc dns parse + tcproxy  						(bug: DNAT、SNAT) 
 5: tc dns parse + xdpproxy 						(❌ only handle dev ingress)
+a: iptables										(skip)
+b: nft											(skip)
 
+tc >= 6.6
 `))
 }
 
