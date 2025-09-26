@@ -42,9 +42,9 @@ struct {
     __uint(max_entries, 65535);
 } connection_map SEC(".maps");
 
-long redirect_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp) {
+long redirect_proxy(struct __sk_buff *skb, struct iphdr *iph, struct tcphdr *tcph) {
     // verifier asks for it
-    if (tcp == NULL || ip == NULL) {
+    if (tcph == NULL || iph == NULL) {
         return -1;
     }
     __u32 pkey1 = 1;
@@ -55,28 +55,28 @@ long redirect_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp)
 
     // 记录原始连接信息
     struct connection_info original_conn = {
-        .original_dst_ip = ip->daddr,
-        .original_dst_port = bpf_ntohs(tcp->dest),
-        .original_src_ip = ip->saddr,
-        .original_src_port = bpf_ntohs(tcp->source),
+        .original_dst_ip = iph->daddr,
+        .original_dst_port = bpf_ntohs(tcph->dest),
+        .original_src_ip = iph->saddr,
+        .original_src_port = bpf_ntohs(tcph->source),
     };
 
     // 创建代理连接信息作为key
     struct connection_info proxy_conn = {
         .original_dst_ip = proxy_eth->addr,
         .original_dst_port = proxy_eth->port,
-        .original_src_ip = ip->saddr,
-        .original_src_port = bpf_ntohs(tcp->source),
+        .original_src_ip = iph->saddr,
+        .original_src_port = bpf_ntohs(tcph->source),
     };
 
     // 存储连接映射
     bpf_map_update_elem(&connection_map, &proxy_conn, &original_conn, BPF_ANY);
-    bpf_printk("query   from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &ip->saddr, bpf_ntohs(tcp->source), &ip->daddr, bpf_ntohs(tcp->dest), &ip->saddr, bpf_ntohs(tcp->source), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
+    bpf_printk("query   from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &iph->saddr, bpf_ntohs(tcph->source), &iph->daddr, bpf_ntohs(tcph->dest), &iph->saddr, bpf_ntohs(tcph->source), &proxy_eth->addr, bpf_ntohs(proxy_eth->port));
 
     /* DNAT */
     set_dst_mac(skb, (char *)&proxy_eth->mac);
-    set_tcp_ip_dest(skb, proxy_eth->addr);
-    set_tcp_dest_port(skb, proxy_eth->port);
+    set_tcp_ip_dest(skb, iph, proxy_eth->addr);
+    set_tcp_dest_port(skb, tcph, proxy_eth->port);
     return bpf_redirect((__u32)proxy_eth->ifindex, BPF_F_INGRESS);
 }
 
@@ -123,8 +123,8 @@ int raw_egress(struct __sk_buff *skb) {
 }
 
 // 处理返回数据包的函数
-long restore_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp) {
-    if (tcp == NULL || ip == NULL) {
+long restore_proxy(struct __sk_buff *skb, struct iphdr *iph, struct tcphdr *tcph) {
+    if (tcph == NULL || iph == NULL) {
         return -1;
     }
 
@@ -135,19 +135,19 @@ long restore_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp) 
         return TC_ACT_OK;
     }
 
-    if (bpf_ntohs(tcp->source) != hook_eth->port) {
+    if (bpf_ntohs(tcph->source) != hook_eth->port) {
         return TC_ACT_OK;
     }
 
     // 创建当前连接信息作为查找key
     struct connection_info current_conn = {
-        .original_dst_ip = ip->saddr,                // 返回包的源IP是代理服务器IP
-        .original_dst_port = bpf_ntohs(tcp->source), // 返回包的源端口是代理服务器端口
-        .original_src_ip = ip->daddr,                // 返回包的目标IP是客户端IP
-        .original_src_port = bpf_ntohs(tcp->dest),   // 返回包的目标端口是客户端端口
+        .original_dst_ip = iph->saddr,                // 返回包的源IP是代理服务器IP
+        .original_dst_port = bpf_ntohs(tcph->source), // 返回包的源端口是代理服务器端口
+        .original_src_ip = iph->daddr,                // 返回包的目标IP是客户端IP
+        .original_src_port = bpf_ntohs(tcph->dest),   // 返回包的目标端口是客户端端口
     };
 
-    bpf_printk("response from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &ip->saddr, bpf_ntohs(tcp->source), &ip->daddr, bpf_ntohs(tcp->dest), &ip->daddr, bpf_ntohs(tcp->dest), &ip->daddr, bpf_ntohs(tcp->dest));
+    bpf_printk("response from %pI4:%d -> %pI4:%d to %pI4:%d -> %pI4:%d", &iph->saddr, bpf_ntohs(tcph->source), &iph->daddr, bpf_ntohs(tcph->dest), &iph->daddr, bpf_ntohs(tcph->dest), &iph->daddr, bpf_ntohs(tcph->dest));
 
     // 查找原始连接信息
     struct connection_info *original_conn = bpf_map_lookup_elem(&connection_map, &current_conn);
@@ -157,8 +157,8 @@ long restore_proxy(struct __sk_buff *skb, struct iphdr *ip, struct tcphdr *tcp) 
 
     /* SNAT */
     set_dst_mac(skb, (char *)&hook_eth->mac);
-    set_tcp_ip_src(skb, original_conn->original_dst_ip);
-    set_tcp_src_port(skb, original_conn->original_dst_port);
+    set_tcp_ip_src(skb, iph, original_conn->original_dst_ip);
+    set_tcp_src_port(skb, tcph, original_conn->original_dst_port);
     return bpf_redirect((__u32)hook_eth->ifindex, BPF_F_INGRESS);
 }
 

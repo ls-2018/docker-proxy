@@ -34,41 +34,30 @@ static inline void set_ip_tos(struct __sk_buff* skb, __u8 new_tos) {
     bpf_skb_store_bytes(skb, TOS_OFF, &new_tos, sizeof(new_tos), 0);
 }
 
-static inline void set_tcp_ip_src(struct __sk_buff* skb, __u32 new_ip) {
-    void* data = (void*)(long)skb->data;
-    struct iphdr* ip = data + sizeof(struct ethhdr);
-
-    __be32 sum = bpf_csum_diff((void*)&ip->saddr, 4, (void*)&new_ip, 4, 0);
+static inline void set_tcp_ip_src(struct __sk_buff* skb, struct iphdr* iph, __u32 new_ip) {
+    __be32 sum = bpf_csum_diff((void*)&iph->saddr, 4, (void*)&new_ip, 4, 0);
     bpf_skb_store_bytes(skb, IP_DST_OFF, (void*)&new_ip, 4, 0);
     bpf_l3_csum_replace(skb, IP_CSUM_OFF, 0, sum, 0);
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, 0, sum, BPF_F_PSEUDO_HDR);
 }
 
-static inline void set_tcp_ip_dest(struct __sk_buff* skb, __u32 new_ip) { // new_ip net order
-    void* data = (void*)(long)skb->data;
-    struct iphdr* ip = data + sizeof(struct ethhdr);
-    __be32 sum = bpf_csum_diff((void*)&ip->daddr, 4, (void*)&new_ip, 4, 0);
+static inline void set_tcp_ip_dest(struct __sk_buff* skb, struct iphdr* iph, __u32 new_ip) { // new_ip net order
+    __be32 sum = bpf_csum_diff((void*)&iph->daddr, 4, (void*)&new_ip, 4, 0);
     bpf_skb_store_bytes(skb, IP_DST_OFF, (void*)&new_ip, 4, 0);
     bpf_l3_csum_replace(skb, IP_CSUM_OFF, 0, sum, 0);
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, 0, sum, BPF_F_PSEUDO_HDR);
-    return 0;
+    return;
 }
 
-static inline void set_tcp_dest_port(struct __sk_buff* skb, __u16 new_port) {
-    void* data = (void*)(long)skb->data;
-    struct tcphdr* tcp = data + sizeof(struct ethhdr) + ihl;
-
-    __be32 sum = bpf_csum_diff((void*)&tcp->dest, 4, (void*)&new_port, 4, 0);
+static inline void set_tcp_dest_port(struct __sk_buff* skb, struct tcphdr* tcph, __u16 new_port) {
+    __be32 sum = bpf_csum_diff((void*)&tcph->dest, 4, (void*)&new_port, 4, 0);
     bpf_skb_store_bytes(skb, TCP_DPORT_OFF, (void*)&new_port, 4, 0);
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, 0, sum, BPF_F_PSEUDO_HDR);
     return;
 }
 
-static inline void set_tcp_src_port(struct __sk_buff* skb, __u16 new_port) {
-    void* data = (void*)(long)skb->data;
-    struct tcphdr* tcp = data + sizeof(struct ethhdr) + ihl;
-
-    __be32 sum = bpf_csum_diff((void*)&tcp->dest, 4, (void*)&new_port, 4, 0);
+static inline void set_tcp_src_port(struct __sk_buff* skb, struct tcphdr* tcph, __u16 new_port) {
+    __be32 sum = bpf_csum_diff((void*)&tcph->dest, 4, (void*)&new_port, 4, 0);
     bpf_skb_store_bytes(skb, TCP_DPORT_OFF, (void*)&new_port, 4, 0);
     bpf_l4_csum_replace(skb, TCP_CSUM_OFF, 0, sum, BPF_F_PSEUDO_HDR);
 }
